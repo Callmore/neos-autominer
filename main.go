@@ -19,6 +19,9 @@ import (
 var (
 	userID     = flag.String("u", "", "UserID of user to mine meteors for.")
 	userIDFile = flag.String("f", "", "Newline delimited file of userIDs to mine for.")
+
+	getMeteorsGoroutineCount  = flag.Int("getCount", 0, "Amount of goroutines to allocate to getting meteors.")
+	mineMeteorsGoroutineCount = flag.Int("mineCount", 0, "Amount of goroutines to allocate to mining meteors.")
 )
 
 var (
@@ -59,11 +62,18 @@ func main() {
 		}
 	}
 
-	getMeteorsCount := runtime.NumCPU() / 4
-	mineMeteorsCount := runtime.NumCPU() - getMeteorsCount
+	getMeteorsCount := *getMeteorsGoroutineCount
+	if getMeteorsCount <= 0 {
+		getMeteorsCount = runtime.NumCPU() / 4
+	}
 
-	if getMeteorsCount < 0 || mineMeteorsCount < 0 {
-		panic("Unable to assign enough goroutines to mining/getting.")
+	mineMeteorsCount := *mineMeteorsGoroutineCount
+	if mineMeteorsCount <= 0 {
+		mineMeteorsCount = runtime.NumCPU() - getMeteorsCount
+	}
+
+	if getMeteorsCount <= 0 || mineMeteorsCount <= 0 {
+		panic("Unable to assign enough goroutines to mining/getting, please manually set instead.")
 	}
 
 	jobQueueGetMeteors := make(chan JobGetUserMeteors, getMeteorsCount)
