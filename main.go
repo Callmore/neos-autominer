@@ -59,10 +59,17 @@ func main() {
 		}
 	}
 
-	jobQueueGetMeteors := make(chan JobGetUserMeteors)
-	jobQueueMineUserMeteor := make(chan JobMineUserMeteor)
+	getMeteorsCount := runtime.NumCPU() / 4
+	mineMeteorsCount := runtime.NumCPU() - getMeteorsCount
 
-	for i := 0; i < runtime.NumCPU()/4; i++ {
+	if getMeteorsCount < 0 || mineMeteorsCount < 0 {
+		panic("Unable to assign enough goroutines to mining/getting.")
+	}
+
+	jobQueueGetMeteors := make(chan JobGetUserMeteors, getMeteorsCount)
+	jobQueueMineUserMeteor := make(chan JobMineUserMeteor, mineMeteorsCount)
+
+	for i := 0; i < getMeteorsCount; i++ {
 		go func(jobQueueGetMeteors <-chan JobGetUserMeteors, jobQueueMineUserMeteor chan<- JobMineUserMeteor) {
 			for {
 				job := <-jobQueueGetMeteors
@@ -78,7 +85,7 @@ func main() {
 		}(jobQueueGetMeteors, jobQueueMineUserMeteor)
 	}
 
-	for i := 0; i < runtime.NumCPU()*3/4; i++ {
+	for i := 0; i < mineMeteorsCount; i++ {
 		go func(jobQueueMineUserMeteor <-chan JobMineUserMeteor) {
 			for {
 				job := <-jobQueueMineUserMeteor
