@@ -73,6 +73,7 @@ func main() {
 		go func(jobQueueGetMeteors <-chan JobGetUserMeteors, jobQueueMineUserMeteor chan<- JobMineUserMeteor) {
 			for {
 				job := <-jobQueueGetMeteors
+				log.Println("Got get meteor job for", job.user)
 				meteors, err := job.Do()
 				if err != nil {
 					log.Println("Got error while getting meteors:", err)
@@ -89,6 +90,8 @@ func main() {
 		go func(jobQueueMineUserMeteor <-chan JobMineUserMeteor) {
 			for {
 				job := <-jobQueueMineUserMeteor
+				log.Println("Got mine meteor id", job.id, "job for", job.user)
+
 				err := job.Do()
 				if err != nil {
 					log.Println("Got error while mining meteor:", err)
